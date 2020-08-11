@@ -86,9 +86,18 @@ Install and test vodle:
 
 * clone this git repo and cd into it
 * add a file named "secret.ts" to folder "src/app" with the content ```export class Secret { static cloudant_up = "none:none"; }```
+* start couchdb: ```sudo docker start couch```
 * start vodle: ```ionic serve``` 
 * go to localhost:8100, enter a username, go to "my polls", then "president of the world", move some slider to the right
 * verify couchdb connection: go to http://localhost:5984/_utils/#/database/maxparc/_all_docs, verify that it shows a document, open it, verify it contains your rating.
+* stop vodle by pressing CTRL-C on the command line
+* stop couchdb: ```sudo docker stop couch```
+
+Testing changes:
+
+* start couchdb, then vodle as above. 
+* when a src file changes on disk, ionic automatically recompiles, so changes take "immediate" effect when reloading the webpage!
+* to restart the app with an empty storage, change user name to "glinda", then press "clear storage", then reload page.
 
 ### OLD: Building
 
