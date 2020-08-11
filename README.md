@@ -3,11 +3,13 @@ Development of a group decision / voting app "vodle"
 
 * main focus for now: get base functionality going (setting up polls, voting, closing a poll)
 
-### Prioritised list of wanted features
+### Prioritised list of wanted features (TODO: turn into "issues")
 
-* poll setup, invitation by email
+* poll setup, invitation by email (Marius)
+* at deadline: poll tally, broadcast result via email
+* add "demo" poll with simulated others (Jobst)
+* add possibility to specify custom couchdb instance & write corresponding howto
 * basic nonencrypted communication via realtime.co
-* at deadline: poll tally, broadcast result via realtime.co
 * optimized explanations, howtos, guides (using text of different detail and animations)
 * custom uri scheme & file extension
 * standard notification when some bar has changed by more than 5% or some pin's distance to bar end gets below 5% or time gets late
@@ -65,7 +67,30 @@ Development of a group decision / voting app "vodle"
 * src/app/openpoll/openpoll.page.ts|html: gui logics and layout
 * src/app/global.service.ts: background logics with classes for polls and options
 
-### Building
+### NEW: Getting started as a developer
+
+Prepare local CouchDB:
+
+* install docker
+* run local couchdb in docker: ```sudo docker run --name couch -p 5984:5984 -e COUCHDB_USER=admin -e COUCHDB_PASSWORD=somepassword -d couchdb```
+* log into its web interface at http://localhost:5984/_utils as user "admin" with specified password
+* in the web interface, create a non-partitioned database named "maxparc"
+* stop container: ```sudo docker stop couch```
+
+Install Ionic Framework (see also https://ionicframework.com/docs/intro/cli):
+
+* sudo apt install npm
+* sudo npm install -g @ionic/cli
+
+Install and test vodle:
+
+* clone this git repo and cd into it
+* add a file named "secret.ts" to folder "src/app" with the content ```export class Secret { static cloudant_up = "none:none"; }```
+* start vodle: ```ionic serve``` 
+* go to localhost:8100, enter a username, go to "my polls", then "president of the world", move some slider to the right
+* verify couchdb connection: go to http://localhost:5984/_utils/#/database/maxparc/_all_docs, verify that it shows a document, open it, verify it contains your rating.
+
+### OLD: Building
 
 I did the following to get the unsigned android debug build going:
 
@@ -94,8 +119,9 @@ On the test web server:
 
 ### Useful commands
 
-* running in dev mode: in main directory of git repo: ionic serve
 * starting local couchdb in docker: sudo docker run --name couch --memory 1G -p 5984:5984 -d couchdb --storage-opt size=1G
+  (this will automatically install couchdb if necessary, so only docker needs to be installed before)
+* running in dev mode: in main directory of git repo: ionic serve
 * logging into container: sudo docker exec -it couch bash
 * sending config option to couchdb: https://docs.couchdb.org/en/stable/config/couchdb.html
 ```
