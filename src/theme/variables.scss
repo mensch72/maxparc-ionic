@@ -5,6 +5,28 @@ $font-family-md-base: "Quicksand Medium";
 $font-family-ios-base: "Quicksand Medium";
 $font-family-wp-base: "Quicksand Medium";
 
+/** popover: **/
+popover-container.popover {
+  border: 5px solid var(--ion-color-danger-shade);
+  border-radius: 30px;
+  border-top-right-radius: 0px;
+  background-color: var(--ion-color-primary-shade);
+  color: #ffffff;
+  min-width: 0%;
+  max-width: 250px;
+  padding: 15px;
+}
+div.popoper-title {
+//  min-width: 0%;
+}
+div.popover-content {
+//  min-width: 0%;
+}
+div.popover-arrow {
+//  border: 2px solid #aa0000;
+}
+/****/
+
 /** vodle slider colors: **/
 // TODO: add rgb,contrast etc.
 

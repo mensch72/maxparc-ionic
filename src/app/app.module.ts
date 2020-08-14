@@ -14,6 +14,7 @@ import { IonicStorageModule } from '@ionic/storage';
 
 import { GlobalService } from './global.service';
 
+
 @NgModule({
   declarations: [AppComponent],
   entryComponents: [],

@@ -91,7 +91,13 @@
     </ion-item>
 
     <ion-item *ngFor="let item of [].constructor(p.oids.length); let i = index"><!-- Array(p.oids.length).fill(0).map(i => i) | sortoptions: {opos: opos}-->
-      <svg xmlns="http://www.w3.org/2000/svg" width="60px" height="50px">
+      <svg xmlns="http://www.w3.org/2000/svg" width="60px" height="50px"
+           triggers="mouseenter:mouseleave"
+           popoverTitle="Winning probability"
+           popover="The dark pie piece shows the probability that this option would be declared the winner if the poll were to end now." 
+           adaptivePosition="false"
+           container="body" placement="left top"
+           >
         <circle cx="21" cy="25" r="20" fill="#bce4e5" stroke="none"/>
         <path [id]="'pie_'+oidsorted[i]" d="M 21,25 l 0,-20 a 20 20 0 0 1 20 20 Z" fill="#9abcbd" />
       </svg>
@@ -101,7 +107,13 @@
             <b>{{p.options[oidsorted[i]].name}}</b>
           </ion-col>
           <ion-col size="1" no-padding no-margin><!--TODO: improve placement-->
-            <ion-button (click)="expand('oid_'+oidsorted[i])" fill="clear" float-right no-padding no-margin>
+            <ion-button (click)="expand('oid_'+oidsorted[i])" fill="clear" float-right no-padding no-margin
+              triggers="mouseenter:mouseleave"
+              popoverTitle="Option details"
+              popover="Click to see the option's description and current status"
+              adaptivePosition="false"
+              container="body" placement="left top"
+              >
               <ion-icon [name]="(expanded=='oid_'+oidsorted[i])?'arrow-dropup':'arrow-dropdown'" slot="icon-only"></ion-icon>
             </ion-button>
           </ion-col>
@@ -110,7 +122,13 @@
           <ion-col no-padding no-margin>
             <ion-range [id]="'slider_'+oidsorted[i]+'_'+sortingcounter" [value]="p.getRating(oidsorted[i], p.myvid)" [color]="slidercolor[oidsorted[i]]"
                         (ionFocus)="ratingChangeBegins(oidsorted[i])" (ionChange)="ratingChanges(oidsorted[i])" (ionBlur)="ratingChangeEnded(oidsorted[i])" 
-                        pin="true" min="0" max="100" style="--bar-height:7px;--knob-size:25px" no-padding no-margin>
+                        pin="true" min="0" max="100" style="--bar-height:7px;--knob-size:25px" no-padding no-margin
+                        triggers="mouseenter:mouseleave"
+                        popoverTitle="Rating slider & support bar"
+                        popover="Drag the knob to adjust your rating of this option from 0 (support by no means) to 100 (support for sure). The bar coming in from the right shows the current support for this option from 0% to 100%. If the knob is in it, you support the option." 
+                        adaptivePosition="false"
+                        container="body" placement="left top"
+                        >
               <ion-label slot="end" no-padding no-margin style="padding-right:11px;">
                 <div style="position:absolute;bottom:0px;right:11px;z-index:-10;">
                   <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="35px"><!--FIXME: in landscape mode on Android, the bars are too narrow!-->

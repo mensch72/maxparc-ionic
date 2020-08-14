@@ -9,6 +9,8 @@ import { OpenpollPage } from './openpoll.page';
 import { SharedcomponentsModule } from '../sharedcomponents/sharedcomponents.module';
 import { ExpandableComponent } from '../sharedcomponents/expandable/expandable.component';
 
+import { PopoverModule } from 'ngx-bootstrap/popover';
+
 const routes: Routes = [
   {
     path: '',
@@ -18,6 +20,7 @@ const routes: Routes = [
 
 @NgModule({
   imports: [
+    PopoverModule.forRoot(),
     CommonModule,
     FormsModule,
     IonicModule,
