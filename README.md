@@ -81,6 +81,7 @@ Install Ionic Framework (see also https://ionicframework.com/docs/intro/cli):
 
 * sudo apt install npm
 * sudo npm install -g @ionic/cli
+* you may also want to sudo npm install -g @angular/cli
 
 Install and test vodle:
 
