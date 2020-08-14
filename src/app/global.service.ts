@@ -5,6 +5,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { finalize } from 'rxjs/operators';
 import { Storage } from '@ionic/storage';
 import { Secret } from './secret';
+import { visitRootRenderNodes } from '@angular/core/src/view/util';
 
 @Injectable(
 //  {providedIn: 'root'}
@@ -60,6 +61,7 @@ export class GlobalService {
         this.init();
       });
   }
+
   init() { // called after state restoration finished
     GlobalService.log('initializing...');
     if (!this.cloudant_up) {
@@ -73,6 +75,7 @@ export class GlobalService {
       'accept': 'application/json'
     });
     if (Object.keys(this.polls).length == 0) {
+      GlobalService.log('initializing demo polls');
       for (let demo in this.demodata) {
         let p = new Poll(this).makedemo(demo);
         this.openpid = p.pid;
@@ -120,6 +123,62 @@ export class GlobalService {
   }
 
   public demodata = {
+    'icecream' : [
+      ["Ice cream flavour for summer party",
+        "You and your 19 friends throw a summer party and need to buy ice cream. Unfortunately only 10-liter containers are available, so you need to agree on a single flavour only...",
+        null,
+        'winner',
+        19,
+        [ // initial ballots:
+          [0,100,0,0,0,0],
+          [0,100,0,0,0,0],
+          [0,100,0,0,0,0],
+          [0,100,0,0,0,0],
+          [0,100,0,0,0,0],
+          [0,100,0,0,0,0],
+          [0,100,0,0,0,0],
+          [0,0,100,0,0,0],
+          [0,0,100,0,0,0],
+          [0,0,0,100,0,0],
+          [0,0,0,100,0,0],
+          [0,0,0,100,0,0],
+          [0,0,0,100,0,0],
+          [0,0,0,100,0,0],
+          [0,0,0,100,0,0],
+          [0,0,0,100,0,0],
+          [0,0,0,0,100,0],
+          [0,0,0,0,100,0],
+          [0,0,0,0,0,100]
+        ],
+        [ // final ballots:
+          [6,100,0,0,0,0],
+          [18,100,0,0,0,0],
+          [38,100,0,0,0,0],
+          [46,100,0,0,0,0],
+          [58,100,0,0,0,0],
+          [78,100,0,0,0,0],
+          [86,100,0,0,0,0],
+          [26,56,100,0,0,0],
+          [66,68,100,0,0,0],
+          [12,0,0,100,0,0],
+          [24,0,0,100,0,0],
+          [44,0,0,100,0,0],
+          [52,0,0,100,0,0],
+          [64,0,0,100,0,0],
+          [84,0,0,100,0,0],
+          [92,0,0,100,0,0],
+          [32,0,0,62,100,0],
+          [72,0,0,74,100,0],
+          [0,0,0,0,0,100]
+        ]
+      ],
+      ["Vanilla", null, ""],
+      ["Chocolate", null, ""],
+      ["Mint", null, ""],
+      ["Lemon", null, ""],
+      ["Strawberry", null, ""],
+      ["Cucumber", null, ""]
+    ],
     'president' : [
       ["President of the world",
       "Imagine we elect this person for four years of office and the following candidates were all available...",
@@ -253,6 +312,8 @@ export class Poll {
   public uri: string = null; // weblink
   public due: Date; // closing time
   public myvid: string = "";
+  public is_simulated: boolean = false; // whether the poll is a simulation running only locally in the user's app/browser
+  public simulation: Simulation = null; // the Simulation object if is_simulated==true
 
   // variable data:
   public vids: string[] = []; // list of voter ids // TODO: make anonymous
@@ -348,6 +409,7 @@ export class Poll {
     // lists of [title, desc, uri] + options' [name, desc, uri]:
 //      ["", "", ""],
     GlobalService.log("making demo poll...");
+    this.is_simulated = false;
     this.pid = demo;
     var oids;
     if (demo == "3by3") {
@@ -370,13 +432,27 @@ export class Poll {
       for (let i=1; i<d.length; i++) {
         this.registerOption({'oid':"o"+i, 'name':d[i][0], 'desc':d[i][1], 'uri':d[i][2]});
       }
+      if (d[0].length > 4) {
+        let nsims = d[0][4];
+        for (let i=0; i<nsims; i++) {
+          this.registerVoter("sim"+i);
+        }
+        for (let i=0; i<nsims; i++) {
+          for (let j=0; j<this.oids.length; j++) {
+            this.setRating(this.oids[j],"sim"+i,d[0][5][i][j])
+          }
+        }
+        this.is_simulated = true;
+        let ta = d[0][6];
+        this.simulation = new Simulation(this, ta);
+      }
     }
-    new Simulation(this);
     for (let oid of this.oids) {
       this.setRating(oid, this.myvid, 0);
     }
     this.due = new Date((new Date()).getTime() + 24*60*60*1e3); // now + one day
     GlobalService.log("...done");
+    GlobalService.log("rating:"+this.getRating('o2','sim1'));
     return this;
   }
 
@@ -618,6 +694,10 @@ export class Poll {
     if ((this.history.length==0) || (t > this.history[this.history.length-1][0] + this.g.history_interval)) {
       this.history.push([t, n, this.voting_share, this.max_approval, this.expected_approval, this.min_approval]);
     }
+
+    if (this.is_simulated) {
+      // TODO: whatever...
+    }
     return true; // changed results
   }
 
@@ -688,6 +768,7 @@ export class Poll {
     );
   }
 
+  // TODO: rename methods to "...Couch..." rather than "...Cloudant..."
   prepareCloudantDoc() {
     if (!this.couchdb_doc) {
       this.couchdb_doc = {
@@ -710,14 +791,18 @@ export class Poll {
       GlobalService.log("  "+oid+":"+this.getRating(oid, this.myvid));
     }
     this.tally();
-    this.prepareCloudantDoc();
-    if ("_rev" in this.couchdb_doc) {
-      // first try to put updated doc with known _rev (should normally succeed):
-      this.putCloudantStoredRev(1);
+    if (this.is_simulated) {
+      // TODO: do we need to do anything here?
     } else {
-      this.putCloudantFetchedRev();
+      this.prepareCloudantDoc();
+      if ("_rev" in this.couchdb_doc) {
+        // first try to put updated doc with known _rev (should normally succeed):
+        this.putCloudantStoredRev(1);
+      } else {
+        this.putCloudantFetchedRev();
+      }
     }
-  }
+  } 
   putCloudantStoredRev(trial:number) {
     let jsondoc = JSON.stringify(this.couchdb_doc);
     GlobalService.log("putting cloudant doc with rev " + this.couchdb_doc["_rev"]); 
@@ -782,7 +867,7 @@ export class Poll {
           s += this.getRating(oid, vid);
         }
       }
-      this.ran = (s % 100) / 100; // TODO: use much better random number generator
+      this.ran = (s % 100) / 100; // TODO: use much better random number generator that however gives the same result on all devices of all voters!
       for (let oid of this.oidsorted) {
         cum += this.probs[oid];
         if (cum > this.ran) {
@@ -796,58 +881,56 @@ export class Poll {
 
 export class Simulation {
 
-  // TODO: dynamics!
+  // TODO: rework completely according to issue "make ice cream demo"
 
   public p: Poll;
+  public run: boolean = false;
+  public page;
 
-  // policy space model parameters:
-  public dim: number = 2;
-  public sigma: number = 1; // dispersion of options (1 = like voters)
+  // target approval distribution:
+  public target = []; // array of approval ballots, each being a dict of approval boolean by oid
 
-  // utility data:
-  public vcoords: {} = {}; // dict of voter coordinate arrays by vid
-  public ocoords: {} = {}; // dict of option coordinate arrays by oid
+  private update_interval = 3e2; // ms to wait before getting next update
 
-  constructor(p:Poll) {
+  constructor(p:Poll, ta:[]) {
     this.p = p; 
-    // draw initial coordinates:
-    for (let oid of p.oids) {
-      this.ocoords[oid] = Array(this.dim).fill(0).map(i => this.sigma * this.rannor());
-    }
-    for (let vid of p.vids) {
-      this.vcoords[vid] = Array(this.dim).fill(0).map(i => this.rannor());
-      this.setRatings(vid);
-    }
+    this.target = ta;
     GlobalService.log("simulation set up.");
   }
+  step() { // perform a step in the simulation
+    for (let it=0; it<5; it++) {
+      // draw a simulated voter and option at random:
+      let i = Math.floor(Math.random() * (this.p.vids.length-1));
+      let j = Math.floor(Math.random() * this.p.oids.length);
+      // move that voter's ratings closer to target:
+      let r = this.p.getRating(this.p.oids[j],"sim"+i)
+      this.p.setRating(this.p.oids[j],"sim"+i,r + Math.round(Math.random()*(this.target[i][j] - r)))
+    }
+  }
+  start(page) {
+    this.run = true;
+    this.page = page;
+    this.loop();
+  }
+  stop() {
+    this.run = false;
+  }
+  async loop() {
+    // every 1 sec, step once
+    while (this.run) {
+      this.step()
+      this.p.tally();
+      this.page.updateOrder();
+      this.page.showStats();
+      await this.p.g.sleep(this.update_interval);
+    }
+  }
+  /*
   rannor() {
-    let u = 0, v = 0;
+    let u = 0;
     while(u === 0) u = Math.random(); //Converting [0,1) to (0,1)
-    while(v === 0) v = Math.random();
-    return Math.sqrt( -2.0 * Math.log( u ) ) * Math.cos( 2.0 * Math.PI * v );
+    let v = Math.random();
+    return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
   }
-  getu(oid:string, vid:string) { // utility = - squared distance in policy space
-    let d2 = 0,
-        op = this.ocoords[oid],
-        vp = this.vcoords[vid];
-    for (let i=0; i<this.dim; i++) {
-      d2 += (op[i] - vp[i])**2;
-    }
-    return -Math.sqrt(d2); // -d2; // Math.exp(-d2);
-  }
-  setRatings(vid:string) { // heuristic rating: 0 = benchmark, 100 = favourite, linear interpolation in between
-    let us = {},
-        umax = -1e100,
-        umean = 0;
-    for (let oid of this.p.oids) {
-      let u = us[oid] = this.getu(oid, vid),
-          pr = this.p.probs[oid];
-      umean += u * ((pr >= 0) ? pr : 1/this.p.oids.length);
-      if (u > umax) umax = u;
-    }
-    for (let oid of this.p.oids) {
-      let r = Math.round(Math.max(0, (us[oid] - umean) / (umax - umean)) * 100);
-      this.p.setRating(oid, vid, r);
-    }
-  }
+  */
 }

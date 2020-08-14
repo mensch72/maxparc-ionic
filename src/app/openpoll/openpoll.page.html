@@ -78,6 +78,9 @@
                     Currently {{Math.round(p.voting_share*1000)/10}}% are supporting some option,
                     the largest support is {{Math.round(p.max_approval*1000)/10}}%,
                     the smallest is {{Math.round(p.min_approval*1000)/10}}%.
+                    <ng-template [ngIf]="p.is_simulation">
+                      <span> (this is a simulated poll)</span>
+                    </ng-template>
                   </small>
                 </span>
               </b>

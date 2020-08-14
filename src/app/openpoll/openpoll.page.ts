@@ -66,7 +66,7 @@ export class OpenpollPage implements OnInit {
   }
   ionViewWillEnter() {
     if (this.g.username=='') {
-      alert("Please enter a your username first!");
+      alert("Please enter a username first!");
       this.navCtrl.navigateBack('/home');
     } else { 
       this.ngOnInit();
@@ -74,8 +74,14 @@ export class OpenpollPage implements OnInit {
   }
   ionViewDidEnter() {
     this.showStats();
+    if (this.p.is_simulated) {
+      this.p.simulation.start(this);
+    }
   }
   ionViewWillLeave() {
+    if (this.p.is_simulated) {
+      this.p.simulation.stop();
+    }
     this.do_updates = false;
     if (this.submit_triggered) {
       this.doSubmit();
@@ -121,7 +127,7 @@ export class OpenpollPage implements OnInit {
       const loadingElement = await this.loadingController.create({
         message: 'Sorting options by support\nuse sync button to toggle auto-sorting.',
         spinner: 'crescent',
-        duration: 1000
+        duration: 100 //0
       });
       await loadingElement.present();
       await loadingElement.onDidDismiss();  
